@@ -1,0 +1,26 @@
+{
+  "name": "now-rust",
+  "version": "0.0.0-canary.0",
+  "description": "ZEIT Now v2.0 Rust builder",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anmonteiro/now-rust.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/anmonteiro/now-rust/issues"
+  },
+  "homepage": "https://github.com/anmonteiro/now-rust",
+  "dependencies": {
+    "@now/build-utils": "*",
+    "concat-stream": "^2.0.0",
+    "execa": "^1.0.0",
+    "lambda-git": "^0.1.2",
+    "toml": "^2.3.3"
+  }
+}
