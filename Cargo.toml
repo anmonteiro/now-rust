@@ -12,10 +12,7 @@ http = "0.1"
 tokio = "^0.1"
 base64 = "0.10"
 log = "^0.4"
-
-[dependencies.lambda_runtime]
-git = "https://github.com/awslabs/aws-lambda-rust-runtime"
-rev = "d117272"
+lambda_runtime = "0.2.0"
 
 [dev-dependencies]
 simple_logger = "^1"

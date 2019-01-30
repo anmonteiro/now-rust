@@ -5,7 +5,6 @@ use serde_json::Error;
 use tokio::runtime::Runtime as TokioRuntime;
 
 mod body;
-// mod ext;
 pub mod request;
 mod response;
 mod strmap;
