@@ -1,15 +1,12 @@
 [package]
 name = "now_rust_example"
 version = "0.1.0"
-authors = ["Antonio Nuno Monteiro <anmonteiro@gmail.com>"]
 edition = "2018"
 
 [dependencies]
 http = "0.1"
-log = "^0.4"
-simple_logger = "^1"
-now_rust = { path = "../../" }
+lambda_runtime = "*"
 
-[dependencies.lambda_runtime]
-git = "https://github.com/awslabs/aws-lambda-rust-runtime"
-rev = "d117272"
+[dependencies.now_rust]
+git = "https://github.com/anmonteiro/now-rust"
+rev = "master"

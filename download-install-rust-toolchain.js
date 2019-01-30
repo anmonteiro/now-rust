@@ -1,13 +1,14 @@
 const path = require('path');
-const fs = require('fs');
-
 const execa = require('execa');
+const fs = require('fs');
+const tar = require('tar');
 const fetch = require('node-fetch');
 const getWritableDirectory = require('@now/build-utils/fs/get-writable-directory.js');
 
 const url = 'https://sh.rustup.rs';
+const ccUrl = 'https://lambci.s3.amazonaws.com/binaries/gcc-4.8.5.tgz';
 
-async function downloadInstaller() {
+async function downloadRustInstaller() {
   console.log('downloading the rustup installer');
   const res = await fetch(url);
   const dir = await getWritableDirectory();
@@ -29,9 +30,35 @@ async function downloadInstaller() {
   });
 }
 
-module.exports = async () => {
-  const installer = await downloadInstaller();
+async function downloadGCC() {
+  console.log('downloading GCC');
+  const dir = await getWritableDirectory();
+  const res = await fetch(ccUrl);
 
+  if (!res.ok) {
+    throw new Error(`Failed to download: ${url}`);
+  }
+
+  return new Promise((resolve, reject) => {
+    res.body
+      .on('error', reject)
+      .pipe(tar.extract({ gzip: true, cwd: '/tmp' }))
+      .on('finish', async () => {
+        const { LD_LIBRARY_PATH } = process.env;
+        const newEnv = {
+          PATH: `/tmp/bin:/tmp/sbin`,
+          LD_LIBRARY_PATH: `/tmp/lib:/tmp/lib64:${LD_LIBRARY_PATH}`,
+          CPATH: `/tmp/include`,
+          LIBRARY_PATH: `/tmp/lib`,
+        };
+
+        return resolve(newEnv);
+      });
+  });
+}
+
+module.exports = async () => {
+  const installer = await downloadRustInstaller();
   try {
     await execa(installer, ['-y'], {
       stdio: 'inherit',
@@ -40,4 +67,8 @@ module.exports = async () => {
     console.log('failed to `rustup-installer -y`');
     throw err;
   }
+
+  const newEnv = await downloadGCC();
+
+  return newEnv;
 };

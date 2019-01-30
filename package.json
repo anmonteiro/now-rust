@@ -1,6 +1,6 @@
 {
   "name": "now-rust",
-  "version": "0.0.0-canary.0",
+  "version": "0.0.0-canary.46",
   "description": "ZEIT Now v2.0 Rust builder",
   "main": "index.js",
   "scripts": {
@@ -16,11 +16,17 @@
     "url": "https://github.com/anmonteiro/now-rust/issues"
   },
   "homepage": "https://github.com/anmonteiro/now-rust",
+  "files": [
+    "index.js",
+    "download-install-rust-toolchain.js"
+  ],
   "dependencies": {
     "@now/build-utils": "*",
     "concat-stream": "^2.0.0",
     "execa": "^1.0.0",
     "lambda-git": "^0.1.2",
+    "rimraf": "^2.6.2",
+    "tar": "^4.4.8",
     "toml": "^2.3.3"
   }
 }

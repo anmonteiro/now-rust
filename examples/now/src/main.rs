@@ -1,20 +1,9 @@
-use log::{self, error};
-use simple_logger;
-use std::error::Error;
-
 use http::StatusCode;
 use lambda_runtime::{error::HandlerError, Context};
 use now_rust::{lambda, IntoResponse, Request, Response};
+use std::error::Error;
 
-fn main() -> Result<(), Box<dyn Error>> {
-    simple_logger::init_with_level(log::Level::Debug).unwrap();
-    lambda!(handler);
-
-    Ok(())
-}
-
-pub fn handler(request: Request, _c: Context) -> Result<impl IntoResponse, HandlerError> {
-    error!("Got to handler");
+fn handler(request: Request, _c: Context) -> Result<impl IntoResponse, HandlerError> {
     let uri = request.uri();
     let response = Response::builder()
         .status(StatusCode::OK)
@@ -22,4 +11,8 @@ pub fn handler(request: Request, _c: Context) -> Result<impl IntoResponse, Handl
         .expect("failed to render response");
 
     Ok(response)
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    Ok(lambda!(handler))
 }

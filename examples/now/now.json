@@ -1,0 +1,13 @@
+{
+  "name": "now-rust",
+  "public": true,
+  "version": 2,
+  "builds": [
+    {
+      "src": "Cargo.toml",
+      "use": "now-rust@github:anmonteiro/now-rust#anmonteiro/wip",
+      "config": { "newPipeline": true }
+    }
+  ],
+  "routes": [{"src": ".*", "dest": "/now_rust_example"}]
+}
