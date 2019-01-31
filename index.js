@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const concat = require('concat-stream');
 const execa = require('execa');
@@ -90,9 +91,7 @@ exports.prepareCache = async ({ cachePath, workPath }) => {
     console.error('failed', e);
   }
 
-  const targetDirContents = await glob('target/**', workPath);
-  const newFiles = rename(targetDirContents, name => path.join(cachePath, name));
-
+  fs.renameSync(path.join(workPath, 'target'), path.join(cachePath, 'target'));
   try {
     execa('ls', ['-lah', cachePath], {
       cwd: cachePath,
@@ -102,5 +101,7 @@ exports.prepareCache = async ({ cachePath, workPath }) => {
     console.error('failed', e);
   }
 
-  return newFiles;
+  return {
+    ...(await glob('target/**', path.join(cachePath))),
+  };
 };
