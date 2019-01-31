@@ -79,7 +79,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   return lambdas;
 };
 
-exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
+exports.prepareCache = async ({ cachePath, workPath }) => {
   console.log('preparing cache...');
   try {
     execa('ls', ['-lah', workPath], {
@@ -90,7 +90,8 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     console.error('failed', e);
   }
 
-  rename(await glob('target/**', workPath), name => path.join(cachePath, name));
+  const targetDirContents = await glob('target/**', workPath);
+  const newFiles = rename(targetDirContents, name => path.join(cachePath, name));
 
   try {
     execa('ls', ['-lah', cachePath], {
@@ -101,7 +102,5 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     console.error('failed', e);
   }
 
-  return {
-    ...(await glob('**', cachePath)),
-  };
+  return newFiles;
 };
