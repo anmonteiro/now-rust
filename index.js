@@ -3,6 +3,7 @@ const path = require('path');
 const concat = require('concat-stream');
 const execa = require('execa');
 const toml = require('toml');
+const rimraf = require('rimraf');
 const { createLambda } = require('@now/build-utils/lambda.js');
 const download = require('@now/build-utils/fs/download.js');
 const glob = require('@now/build-utils/fs/glob.js'); // eslint-disable-line import/no-extraneous-dependencies
@@ -80,6 +81,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
 
 exports.prepareCache = async ({ cachePath, workPath }) => {
   console.log('preparing cache...');
+  rimraf.sync(path.join(cachePath, 'target'));
   fs.renameSync(path.join(workPath, 'target'), path.join(cachePath, 'target'));
 
   return {
