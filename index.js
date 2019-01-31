@@ -65,18 +65,20 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   );
 
   const lambdas = {};
-  binaries.forEach(async binary => {
-    const fsPath = path.join(targetPath, binary);
-    const lambda = await createLambda({
-      files: {
-        bootstrap: new FileFsRef({ mode: 0o755, fsPath }),
-      },
-      handler: 'bootstrap',
-      runtime: 'provided',
-    });
+  await Promise.all(
+    binaries.map(async binary => {
+      const fsPath = path.join(targetPath, binary);
+      const lambda = await createLambda({
+        files: {
+          bootstrap: new FileFsRef({ mode: 0o755, fsPath }),
+        },
+        handler: 'bootstrap',
+        runtime: 'provided',
+      });
 
-    lambdas[binary] = lambda;
-  });
+      lambdas[binary] = lambda;
+    }),
+  );
 
   return lambdas;
 };
