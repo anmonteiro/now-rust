@@ -5,30 +5,47 @@ const tar = require('tar');
 const fetch = require('node-fetch');
 const getWritableDirectory = require('@now/build-utils/fs/get-writable-directory.js');
 
-const url = 'https://sh.rustup.rs';
+const url = 'https://s3.eu-west-3.amazonaws.com/anmonteiro/rust.tar';
 const ccUrl = 'https://lambci.s3.amazonaws.com/binaries/gcc-4.8.5.tgz';
 
-async function downloadRustInstaller() {
-  console.log('downloading the rustup installer');
+async function downloadRust() {
+  console.log('downloading the rust toolchain');
   const res = await fetch(url);
-  const dir = await getWritableDirectory();
-  const writable = fs.createWriteStream(path.join(dir, 'rustup-installer'));
 
   if (!res.ok) {
     throw new Error(`Failed to download: ${url}`);
   }
 
+  const { HOME } = process.env;
   return new Promise((resolve, reject) => {
     res.body
       .on('error', reject)
-      .pipe(writable)
-      .on('finish', async () => {
-        const installerPath = path.join(dir, 'rustup-installer');
-        await fs.chmodSync(installerPath, 0o755);
-        return resolve(installerPath);
-      });
+      .pipe(tar.extract({ cwd: HOME }))
+      .on('finish', () => resolve(path.join(HOME, '.cargo/bin', 'cargo')));
   });
 }
+
+// async function downloadRustInstaller() {
+//   console.log('downloading the rustup installer');
+//   const res = await fetch(url);
+//   const dir = await getWritableDirectory();
+//   const writable = fs.createWriteStream(path.join(dir, 'rustup-installer'));
+
+//   if (!res.ok) {
+//     throw new Error(`Failed to download: ${url}`);
+//   }
+
+//   return new Promise((resolve) => {
+//     res.body
+//       .on('error', reject)
+//       .pipe(writable)
+//       .on('finish', async () => {
+//         const installerPath = path.join(dir, 'rustup-installer');
+//         await fs.chmodSync(installerPath, 0o755);
+//         return resolve(installerPath);
+//       });
+//   });
+// }
 
 async function downloadGCC() {
   console.log('downloading GCC');
