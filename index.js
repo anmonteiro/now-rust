@@ -23,11 +23,7 @@ async function parseTOMLStream(stream) {
 
 exports.build = async ({ files, entrypoint, workPath }) => {
   console.log('downloading files');
-  const srcPath = await getWritableDirectory();
-  const downloadedFiles = await download(files, srcPath);
-
-  // move all user code to workPath subdirectory
-  rename(files, name => path.join(workPath, name));
+  const downloadedFiles = await download(files, workPath);
 
   const { PATH: toolchainPath, ...otherEnv } = await installRustAndGCC();
   const { PATH, HOME } = process.env;
@@ -58,10 +54,10 @@ exports.build = async ({ files, entrypoint, workPath }) => {
     throw err;
   }
 
-  const targetPath = path.join(srcPath, 'target', 'release');
+  const targetPath = path.join(workPath, 'target', 'release');
   const binaries = await inferCargoBinaries(
     cargoToml,
-    path.join(srcPath, 'src'),
+    path.join(workPath, 'src'),
   );
 
   const lambdas = {};
@@ -85,6 +81,10 @@ exports.build = async ({ files, entrypoint, workPath }) => {
 
 exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   console.log('preparing cache...');
+  execa('ls', ['-lah', workPath], {
+    cwd: entrypointDirname,
+    stdio: 'inherit',
+  });
   rename(glob('target/**', workPath), name => path.join(cachePath, name));
 
   return {
