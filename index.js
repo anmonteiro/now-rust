@@ -4,9 +4,7 @@ const concat = require('concat-stream');
 const execa = require('execa');
 const toml = require('toml');
 const { createLambda } = require('@now/build-utils/lambda.js');
-const rename = require('@now/build-utils/fs/rename.js');
 const download = require('@now/build-utils/fs/download.js');
-const getWritableDirectory = require('@now/build-utils/fs/get-writable-directory.js');
 const glob = require('@now/build-utils/fs/glob.js'); // eslint-disable-line import/no-extraneous-dependencies
 const FileFsRef = require('@now/build-utils/file-fs-ref.js');
 const installRustAndGCC = require('./download-install-rust-toolchain');
@@ -82,24 +80,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
 
 exports.prepareCache = async ({ cachePath, workPath }) => {
   console.log('preparing cache...');
-  try {
-    execa('ls', ['-lah', workPath], {
-      cwd: workPath,
-      stdio: 'inherit',
-    });
-  } catch (e) {
-    console.error('failed', e);
-  }
-
   fs.renameSync(path.join(workPath, 'target'), path.join(cachePath, 'target'));
-  try {
-    execa('ls', ['-lah', cachePath], {
-      cwd: cachePath,
-      stdio: 'inherit',
-    });
-  } catch (e) {
-    console.error('failed', e);
-  }
 
   return {
     ...(await glob('target/**', path.join(cachePath))),
