@@ -5,16 +5,17 @@ const toml = require('toml');
 const { createLambda } = require('@now/build-utils/lambda.js');
 const rename = require('@now/build-utils/fs/rename.js');
 const download = require('@now/build-utils/fs/download.js');
-const installRustAndGCC = require('./download-install-rust-toolchain');
 const getWritableDirectory = require('@now/build-utils/fs/get-writable-directory.js');
 const FileFsRef = require('@now/build-utils/file-fs-ref.js');
+const installRustAndGCC = require('./download-install-rust-toolchain');
+const inferCargoBinaries = require('./inferCargoBinaries');
 
 exports.config = {
   maxLambdaSize: '25mb',
 };
 
 async function parseTOMLStream(stream) {
-  return new Promise((resolve, _reject) => {
+  return new Promise(resolve => {
     stream.pipe(concat(data => resolve(toml.parse(data))));
   });
 }
@@ -25,10 +26,9 @@ exports.build = async ({ files, entrypoint }) => {
   const downloadedFiles = await download(files, srcPath);
 
   // move all user code to 'user' subdirectory
-  const _userFiles = rename(files, name => path.join('user', name));
+  rename(files, name => path.join('user', name));
 
   const { PATH: toolchainPath, ...otherEnv } = await installRustAndGCC();
-
   const { PATH, HOME } = process.env;
   const rustEnv = {
     ...process.env,
@@ -57,18 +57,25 @@ exports.build = async ({ files, entrypoint }) => {
     throw err;
   }
 
-  // NOTE(anmonteiro): having a `name` field in the [package] section
-  // of `Cargo.toml` is effectively a requirement for this builder. We don't
-  // check for its presence because `cargo` already requires it.
-  const executableName = cargoToml.package.name.replace(/-/g, '_');
-  const fsPath = path.join(srcPath, 'target/release', executableName);
-  const lambda = await createLambda({
-    files: {
-      bootstrap: new FileFsRef({ mode: 0o755, fsPath }),
-    },
-    handler: 'bootstrap',
-    runtime: 'provided',
+  const targetPath = path.join(srcPath, 'target/release');
+  const binaries = await inferCargoBinaries(
+    cargoToml,
+    path.join('srcPath', 'dir'),
+  );
+
+  const lambdas = {};
+  binaries.forEach(async binary => {
+    const fsPath = path.join(targetPath, binary);
+    const lambda = await createLambda({
+      files: {
+        bootstrap: new FileFsRef({ mode: 0o755, fsPath }),
+      },
+      handler: 'bootstrap',
+      runtime: 'provided',
+    });
+
+    lambdas[executableName] = lambda;
   });
 
-  return { [executableName]: lambda };
+  return lambdas;
 };
