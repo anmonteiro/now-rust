@@ -89,7 +89,17 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   } catch (e) {
     console.error('failed', e);
   }
-  rename(glob('target/**', workPath), name => path.join(cachePath, name));
+
+  rename(await glob('target/**', workPath), name => path.join(cachePath, name));
+
+  try {
+    execa('ls', ['-lah', cachePath], {
+      cwd: cachePath,
+      stdio: 'inherit',
+    });
+  } catch (e) {
+    console.error('failed', e);
+  }
 
   return {
     ...(await glob('**', cachePath)),
