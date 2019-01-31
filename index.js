@@ -6,6 +6,7 @@ const { createLambda } = require('@now/build-utils/lambda.js');
 const rename = require('@now/build-utils/fs/rename.js');
 const download = require('@now/build-utils/fs/download.js');
 const getWritableDirectory = require('@now/build-utils/fs/get-writable-directory.js');
+const glob = require('@now/build-utils/fs/glob.js'); // eslint-disable-line import/no-extraneous-dependencies
 const FileFsRef = require('@now/build-utils/file-fs-ref.js');
 const installRustAndGCC = require('./download-install-rust-toolchain');
 const inferCargoBinaries = require('./inferCargoBinaries');
@@ -20,13 +21,13 @@ async function parseTOMLStream(stream) {
   });
 }
 
-exports.build = async ({ files, entrypoint }) => {
+exports.build = async ({ files, entrypoint, workPath }) => {
   console.log('downloading files');
   const srcPath = await getWritableDirectory();
   const downloadedFiles = await download(files, srcPath);
 
-  // move all user code to 'user' subdirectory
-  rename(files, name => path.join('user', name));
+  // move all user code to workPath subdirectory
+  rename(files, name => path.join(workPath, name));
 
   const { PATH: toolchainPath, ...otherEnv } = await installRustAndGCC();
   const { PATH, HOME } = process.env;
@@ -60,7 +61,7 @@ exports.build = async ({ files, entrypoint }) => {
   const targetPath = path.join(srcPath, 'target', 'release');
   const binaries = await inferCargoBinaries(
     cargoToml,
-    path.join(srcPath, 'dir'),
+    path.join(srcPath, 'src'),
   );
 
   const lambdas = {};
@@ -78,4 +79,13 @@ exports.build = async ({ files, entrypoint }) => {
   });
 
   return lambdas;
+};
+
+exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
+  console.log('preparing cache...');
+  rename(glob('target/**', workPath), name => path.join(cachePath, name));
+
+  return {
+    ...(await glob('**', cachePath)),
+  };
 };
