@@ -44,7 +44,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
   console.log('running `cargo build --release`...');
   try {
-    await execa('cargo', ['build', '-j', '8', '--release'], {
+    await execa('cargo', ['build', '--release'], {
       env: rustEnv,
       cwd: entrypointDirname,
       stdio: 'inherit',
@@ -81,10 +81,14 @@ exports.build = async ({ files, entrypoint, workPath }) => {
 
 exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   console.log('preparing cache...');
-  execa('ls', ['-lah', workPath], {
-    cwd: entrypointDirname,
-    stdio: 'inherit',
-  });
+  try {
+    execa('ls', ['-lah', workPath], {
+      cwd: workPath,
+      stdio: 'inherit',
+    });
+  } catch (e) {
+    console.error('failed', e);
+  }
   rename(glob('target/**', workPath), name => path.join(cachePath, name));
 
   return {
