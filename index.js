@@ -75,7 +75,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
       runtime: 'provided',
     });
 
-    lambdas[executableName] = lambda;
+    lambdas[binary] = lambda;
   });
 
   return lambdas;
