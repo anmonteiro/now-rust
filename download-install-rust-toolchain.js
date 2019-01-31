@@ -75,15 +75,16 @@ async function downloadGCC() {
 }
 
 module.exports = async () => {
-  const installer = await downloadRustInstaller();
-  try {
-    await execa(installer, ['-y'], {
-      stdio: 'inherit',
-    });
-  } catch (err) {
-    console.log('failed to `rustup-installer -y`');
-    throw err;
-  }
+  await downloadRust();
+  // const installer = await downloadRustInstaller();
+  // try {
+  //   await execa(installer, ['-y'], {
+  //     stdio: 'inherit',
+  //   });
+  // } catch (err) {
+  //   console.log('failed to `rustup-installer -y`');
+  //   throw err;
+  // }
 
   const newEnv = await downloadGCC();
 
