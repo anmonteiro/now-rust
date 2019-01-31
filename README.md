@@ -12,11 +12,10 @@ Rust lambdas on Now's platform.
 
 ```rust
 use http::StatusCode;
-use lambda_runtime::{error::HandlerError, Context};
-use now_rust::{lambda, IntoResponse, Request, Response};
+use now_lambda::{lambda, IntoResponse, Request, Response, error::NowError};
 use std::error::Error;
 
-fn handler(request: Request, _c: Context) -> Result<impl IntoResponse, HandlerError> {
+fn handler(request: Request) -> Result<impl IntoResponse, NowError> {
     let uri = request.uri();
     let response = Response::builder()
         .status(StatusCode::OK)
