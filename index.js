@@ -79,10 +79,11 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   return lambdas;
 };
 
-exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
+exports.prepareCache = async ({ cachePath, entrypoint, files, workPath }) => {
   console.log('preparing cache...');
-  const downloadedFiles = await download(files, workPath);
-  const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
+  // const downloadedFiles = await download(files, workPath);
+  // const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
+  const entrypointDirname = path.dirname(path.join(workPath, entrypoint));
   console.log('argh', entrypointDirname);
   try {
     await execa('ls', ['-lah', entrypointDirname], {
