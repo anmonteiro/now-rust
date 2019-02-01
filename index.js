@@ -110,6 +110,6 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   }
 
   return {
-    ...(await glob('**/**'), path.join(cachePath)),
+    ...(await glob('**/**', path.join(cachePath))),
   };
 };
