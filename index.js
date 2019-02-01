@@ -54,7 +54,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
     throw err;
   }
 
-  const targetPath = path.join(workPath, 'target', 'release');
+  const targetPath = path.join(entrypointDirname, 'target', 'release');
   const binaries = await inferCargoBinaries(
     cargoToml,
     path.join(entrypointDirname, 'src'),
@@ -79,8 +79,21 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   return lambdas;
 };
 
-exports.prepareCache = async ({ cachePath, workPath }) => {
+exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   console.log('preparing cache...');
+  const downloadedFiles = await download(files, workPath);
+  const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
+  console.log('argh', entrypointDirname);
+  try {
+    await execa('ls', ['-lah', entrypointDirname], {
+      cwd: entrypointDirname,
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    console.error('failed to `ls`');
+  }
+
+
   rimraf.sync(path.join(cachePath, 'target'));
   fs.renameSync(path.join(workPath, 'target'), path.join(cachePath, 'target'));
 
