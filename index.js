@@ -4,19 +4,19 @@ const concat = require('concat-stream');
 const execa = require('execa');
 const toml = require('toml');
 const rimraf = require('rimraf');
-const { createLambda } = require('@now/build-utils/lambda.js');
-const download = require('@now/build-utils/fs/download.js');
+const { createLambda } = require('@now/build-utils/lambda.js'); // eslint-disable-line import/no-extraneous-dependencies
+const download = require('@now/build-utils/fs/download.js'); // eslint-disable-line import/no-extraneous-dependencies
 const glob = require('@now/build-utils/fs/glob.js'); // eslint-disable-line import/no-extraneous-dependencies
-const FileFsRef = require('@now/build-utils/file-fs-ref.js');
-const installRustAndGCC = require('./download-install-rust-toolchain');
-const inferCargoBinaries = require('./inferCargoBinaries');
+const FileFsRef = require('@now/build-utils/file-fs-ref.js'); // eslint-disable-line import/no-extraneous-dependencies
+const installRustAndGCC = require('./download-install-rust-toolchain.js');
+const inferCargoBinaries = require('./inferCargoBinaries.js');
 
 exports.config = {
   maxLambdaSize: '25mb',
 };
 
 async function parseTOMLStream(stream) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     stream.pipe(concat(data => resolve(toml.parse(data))));
   });
 }
@@ -57,12 +57,12 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   const targetPath = path.join(workPath, 'target', 'release');
   const binaries = await inferCargoBinaries(
     cargoToml,
-    path.join(workPath, 'src'),
+    path.join(entrypointDirname, 'src'),
   );
 
   const lambdas = {};
   await Promise.all(
-    binaries.map(async binary => {
+    binaries.map(async (binary) => {
       const fsPath = path.join(targetPath, binary);
       const lambda = await createLambda({
         files: {
