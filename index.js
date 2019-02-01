@@ -80,12 +80,11 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   return lambdas;
 };
 
-exports.prepareCache = async ({ cachePath, entrypoint, files, workPath }) => {
+exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   console.log('preparing cache...');
-  // const downloadedFiles = await download(files, workPath);
-  // const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
   const entrypointDirname = path.dirname(path.join(workPath, entrypoint));
-  console.log('argh', entrypointDirname);
+  const cacheEntrypointDirname = path.dirname(path.join(cachePath, entrypoint));
+  console.log('argh', entrypointDirname, cacheEntrypointDirname);
   try {
     await execa('ls', ['-lah', entrypointDirname], {
       cwd: entrypointDirname,
@@ -95,15 +94,22 @@ exports.prepareCache = async ({ cachePath, entrypoint, files, workPath }) => {
     console.error('failed to `ls`');
   }
 
-  const cacheEntrypointDirname = path.dirname(path.join(cachePath, entrypoint));
   rimraf.sync(path.join(cacheEntrypointDirname, 'target'));
   mkdirp.sync(cacheEntrypointDirname);
   fs.renameSync(
     path.join(entrypointDirname, 'target'),
     path.join(cacheEntrypointDirname, 'target'),
   );
+  try {
+    await execa('ls', ['-lah', cacheEntrypointDirname], {
+      cwd: cacheEntrypointDirname,
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    console.error('failed to `ls`');
+  }
 
   return {
-    ...(await glob('target/**', path.join(cachePath))),
+    ...(await glob('**/**'), path.join(cachePath)),
   };
 };
