@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const concat = require('concat-stream');
 const execa = require('execa');
+const mkdirp = require('mkdirp');
 const toml = require('toml');
 const rimraf = require('rimraf');
 const { createLambda } = require('@now/build-utils/lambda.js'); // eslint-disable-line import/no-extraneous-dependencies
@@ -16,7 +17,7 @@ exports.config = {
 };
 
 async function parseTOMLStream(stream) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     stream.pipe(concat(data => resolve(toml.parse(data))));
   });
 }
@@ -62,7 +63,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
 
   const lambdas = {};
   await Promise.all(
-    binaries.map(async (binary) => {
+    binaries.map(async binary => {
       const fsPath = path.join(targetPath, binary);
       const lambda = await createLambda({
         files: {
@@ -94,9 +95,13 @@ exports.prepareCache = async ({ cachePath, entrypoint, files, workPath }) => {
     console.error('failed to `ls`');
   }
 
-
-  rimraf.sync(path.join(cachePath, 'target'));
-  fs.renameSync(path.join(workPath, 'target'), path.join(cachePath, 'target'));
+  const cacheEntrypointDirname = path.dirname(path.join(cachePath, entrypoint));
+  rimraf.sync(path.join(cacheEntrypointDirname, 'target'));
+  mkdirp.sync(cacheEntrypointDirname);
+  fs.renameSync(
+    path.join(entrypointDirname, 'target'),
+    path.join(cacheEntrypointDirname, 'target'),
+  );
 
   return {
     ...(await glob('target/**', path.join(cachePath))),
