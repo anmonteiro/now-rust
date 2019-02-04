@@ -40,12 +40,15 @@ function stat(p) {
 async function inferCargoBinaries(cargoToml, srcDir) {
   const { package: pkg, bin } = cargoToml;
   const binaries = [];
-  const hasMain = (await readdir(srcDir)).includes('main.rs');
+  console.log('gosh0..', srcDir);
+  const hasMain = await exists(path.join(srcDir, 'main.rs'));
+  console.log('gosh1..', hasMain);
 
   if (hasMain) {
     binaries.push(pkg.name);
   }
 
+  console.log('gosh2..', (Array.isArray(bin)));
   // From: https://doc.rust-lang.org/cargo/reference/manifest.html#the-project-layout
   //   Do note, however, once you add a [[bin]] section (see below), Cargo will
   //   no longer automatically build files located in src/bin/*.rs. Instead you
@@ -56,6 +59,7 @@ async function inferCargoBinaries(cargoToml, srcDir) {
     });
   } else {
     const binDir = path.join(srcDir, 'bin');
+    console.log('gosh3..', bin, binDir);
     const filesInSrcBin =
       (await exists(binDir)) && (await stat(binDir)).isDirectory()
         ? await readdir(binDir)

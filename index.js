@@ -62,7 +62,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
     console.log('binaries,....', binaries);
 
   } catch (e) {
-    console.log('oopsy', path.join(entrypointDirname, 'src'));
+    console.log('oopsy', e, path.join(entrypointDirname, 'src'));
   }
 
 
