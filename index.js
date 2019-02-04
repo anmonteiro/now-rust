@@ -43,6 +43,30 @@ exports.build = async ({ files, entrypoint, workPath }) => {
   }
 
   const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
+
+  try {
+    await execa('ls', ['-lah'], {
+      env: rustEnv,
+      cwd: entrypointDirname,
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    console.error('failed to `ls`');
+  }
+  console.log('lets try this sooner')
+  try {
+    const binaries = await inferCargoBinaries(
+      cargoToml,
+      path.join(entrypointDirname, 'src'),
+    );
+    console.log('binaries,....', binaries);
+
+  } catch (e) {
+    console.log('oopsy', path.join(entrypointDirname, 'src'));
+  }
+
+
+
   console.log('running `cargo build --release`...');
   try {
     await execa('cargo', ['build', '--release'], {

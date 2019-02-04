@@ -18,12 +18,14 @@
   "homepage": "https://github.com/anmonteiro/now-rust",
   "files": [
     "index.js",
-    "download-install-rust-toolchain.js"
+    "download-install-rust-toolchain.js",
+    "inferCargoBinaries.js"
   ],
   "dependencies": {
     "@now/build-utils": "*",
     "concat-stream": "^2.0.0",
     "execa": "^1.0.0",
+    "mkdirp": "^0.5.1",
     "rimraf": "^2.6.3",
     "tar": "^4.4.8",
     "toml": "^2.3.3"
