@@ -146,7 +146,7 @@ async function buildSingleFile({
     throw err;
   }
 
-  const bin = path.join(entrypointDirname, 'target', 'release', binName);
+  const bin = path.join(entrypointDirname, 'target', 'debug', binName);
 
   const lambda = await createLambda({
     files: {
