@@ -174,9 +174,9 @@ exports.build = async m => {
 
   const newM = Object.assign(m, { downloadedFiles, rustEnv });
   if (path.extname(entrypoint) === '.toml') {
-    buildWholeProject(newM);
+    return await buildWholeProject(newM);
   } else {
-    buildSingleFile(newM);
+    return await buildSingleFile(newM);
   }
 };
 
