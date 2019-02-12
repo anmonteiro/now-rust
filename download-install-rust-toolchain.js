@@ -60,7 +60,7 @@ module.exports = async () => {
   const newEnv = await downloadGCC();
   console.log('installing openssl-devel...');
   try {
-    await execa('yum' ['downgrade', '-y', 'openssl-1.0.1k-15.99.amzn1.x86_64'], {
+    await execa('yum', ['downgrade', '-y', 'openssl-1.0.1k-15.99.amzn1.x86_64'], {
       stdio: 'inherit',
     });
     await execa('yum', ['install', '-y', 'openssl-devel'], {
