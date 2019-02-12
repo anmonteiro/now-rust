@@ -71,7 +71,7 @@ async function buildWholeProject({
 }
 
 async function buildSingleFile({
-  files,
+  workPath,
   entrypoint,
   downloadedFiles,
   rustEnv,
