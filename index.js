@@ -156,7 +156,9 @@ async function buildSingleFile({
     runtime: 'provided',
   });
 
-  lambdas[entrypoint] = lambda;
+  return {
+    [entrypoint]: lambda,
+  };
 }
 
 exports.build = async m => {
