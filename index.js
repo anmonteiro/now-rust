@@ -164,7 +164,7 @@ async function buildSingleFile({
 
   const lambda = await createLambda({
     files: {
-      bootstrap: new FileFsRef({ mode: 0o755, bin }),
+      bootstrap: new FileFsRef({ mode: 0o755, fsPath: bin }),
     },
     handler: 'bootstrap',
     runtime: 'provided',
