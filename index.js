@@ -53,7 +53,7 @@ exports.build = async ({ files, entrypoint, workPath }) => {
     throw err;
   }
 
-  const targetPath = path.join(entrypointDirname, 'target', 'release');
+  const targetPath = path.join(entrypointDirname, 'target', 'debug');
   const binaries = await inferCargoBinaries(
     cargoToml,
     path.join(entrypointDirname, 'src'),
