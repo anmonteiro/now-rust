@@ -115,6 +115,9 @@ async function buildSingleFile({
     .basename(entrypointPath)
     .replace(path.extname(entrypointPath), '');
   const { package, dependencies } = cargoToml;
+  dependencies.now_lambda = {
+    git: 'https://github.com/zeit/now-builders',
+  };
   const tomlToWrite = toml.stringify({
     package,
     dependencies,
@@ -125,6 +128,7 @@ async function buildSingleFile({
       },
     ],
   });
+  console.log('toml to write:', tomlToWrite);
 
   await fs.writeFile(cargoTomlFile.fsPath, tomlToWrite);
 
