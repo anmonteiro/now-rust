@@ -147,6 +147,20 @@ async function buildSingleFile({
   }
 
   const bin = path.join(entrypointDirname, 'target', 'debug', binName);
+  console.log('bin', bin);
+  try {
+    await execa(
+      'ls',
+      ['-lah', path.join('target', 'debug')],
+      {
+        env: rustEnv,
+        cwd: entrypointDirname,
+        stdio: 'inherit',
+      },
+    );
+  } catch (err) {
+    console.error('failed to `cls`');
+  }
 
   const lambda = await createLambda({
     files: {
