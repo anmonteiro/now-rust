@@ -61,10 +61,13 @@ module.exports = async () => {
   console.log('installing openssl-devel...');
   try {
     await execa('yum', ['install', '-y', 'openssl-devel'], {
-      env: newEnv,
       stdio: 'inherit',
     });
   } catch (err) {
+    try {
+    await execa('which', ['yum'], {
+      stdio: 'inherit',
+    });} catch(_) {};
     console.error('failed to `yum install -y openssl-devel`');
     throw err;
   }
