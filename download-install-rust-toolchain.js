@@ -60,14 +60,10 @@ module.exports = async () => {
   const newEnv = await downloadGCC();
   console.log('installing openssl-devel...');
   try {
-    await execa('yum', ['install', '-y', 'openssl-devel'], {
+    await execa('yum', ['install', '-y', '--skip-broken', 'openssl-devel'], {
       stdio: 'inherit',
     });
   } catch (err) {
-    try {
-    await execa('which', ['yum'], {
-      stdio: 'inherit',
-    });} catch(_) {};
     console.error('failed to `yum install -y openssl-devel`');
     throw err;
   }
