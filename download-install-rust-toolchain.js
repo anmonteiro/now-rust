@@ -1,5 +1,6 @@
 const tar = require('tar');
 const fetch = require('node-fetch');
+const execa = require('execa');
 
 const rustUrl = 'https://dmmcy0pwk6bqi.cloudfront.net/rust.tar.gz';
 const ccUrl = 'https://dmmcy0pwk6bqi.cloudfront.net/gcc-4.8.5.tgz';
@@ -57,6 +58,16 @@ module.exports = async () => {
   await downloadRustToolchain();
 
   const newEnv = await downloadGCC();
+  console.log('installing openssl-devel...');
+  try {
+    await execa('yum', ['install', '-y', 'openssl-devel'], {
+      env: newEnv,
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    console.error('failed to `yum install -y openssl-devel`');
+    throw err;
+  }
 
   return newEnv;
 };
