@@ -191,17 +191,6 @@ exports.build = async m => {
     PATH: `${path.join(HOME, '.cargo/bin')}:${toolchainPath}:${PATH}`,
   };
 
-  console.log('crlh', rustEnv.PATH);
-  try {
-    await execa('ls', ['-lah', path.join(HOME, '.cargo/bin')], {
-      env: rustEnv,
-      cwd: entrypointDirname,
-      stdio: 'inherit',
-    });
-  } catch (err) {
-    console.error('failed to `which cargo`');
-  }
-
   const newM = Object.assign(m, { downloadedFiles, rustEnv });
   if (path.extname(entrypoint) === '.toml') {
     return await buildWholeProject(newM);
@@ -224,6 +213,7 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     };
 
     console.log('crlh', rustEnv.PATH);
+    const entrypointDirname = path.dirname(path.join(workPath, entrypoint));
     try {
       await execa('ls', ['-lah', path.join(HOME, '.cargo/bin')], {
         env: rustEnv,
@@ -240,7 +230,7 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
         ['locate-project'],
         {
           env: rustEnv,
-          cwd: path.dirname(entrypoint),
+          cwd: entrypointDirname,
         },
       );
       const projectDescription = JSON.parse(projectDescriptionStr);
