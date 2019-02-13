@@ -191,6 +191,7 @@ exports.build = async m => {
     PATH: `${path.join(HOME, '.cargo/bin')}:${toolchainPath}:${PATH}`,
   };
 
+  console.log('crlh', rustEnv.PATH);
   try {
     await execa('ls', ['-lah', path.join(HOME, '.cargo/bin')], {
       env: rustEnv,
@@ -222,6 +223,7 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
       PATH: `${path.join(HOME, '.cargo/bin')}:/tmp/bin:/tmp/sbin:${PATH}`,
     };
 
+    console.log('crlh', rustEnv.PATH);
     try {
       await execa('ls', ['-lah', path.join(HOME, '.cargo/bin')], {
         env: rustEnv,
