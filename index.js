@@ -13,12 +13,13 @@ exports.config = {
   maxLambdaSize: '25mb',
 };
 
-async function inferCargoBinaries() {
+async function inferCargoBinaries(config) {
   try {
-    const { stdout: manifestStr } = await execa('cargo', ['read-manifest'], {
-      env: rustEnv,
-      cwd: entrypointDirname,
-    });
+    const { stdout: manifestStr } = await execa(
+      'cargo',
+      ['read-manifest'],
+      config,
+    );
 
     const { targets } = JSON.parse(manifestStr);
 
