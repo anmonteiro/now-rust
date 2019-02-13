@@ -217,6 +217,12 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   if (path.extname(entrypoint) === '.toml') {
     targetFolderDir = path.dirname(path.join(workPath, entrypoint));
   } else {
+    const { PATH, HOME } = process.env;
+    const rustEnv = {
+      ...process.env,
+      PATH: `${path.join(HOME, '.cargo/bin')}:${PATH}`,
+    };
+
     try {
       const { stdout: projectDescriptionStr } = await execa(
         'cargo',
