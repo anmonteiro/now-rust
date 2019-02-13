@@ -165,16 +165,6 @@ async function buildSingleFile({
     'debug',
     binName,
   );
-  console.log('bin', bin);
-  try {
-    await execa('ls', ['-lah', path.join('target', 'debug')], {
-      env: rustEnv,
-      cwd: entrypointDirname,
-      stdio: 'inherit',
-    });
-  } catch (err) {
-    console.error('failed to `cls`');
-  }
 
   const lambda = await createLambda({
     files: {
@@ -201,6 +191,7 @@ exports.build = async m => {
     ...otherEnv,
     PATH: `${path.join(HOME, '.cargo/bin')}:${toolchainPath}:${PATH}`,
   };
+  console.log('wat', HOME);
 
   const newM = Object.assign(m, { downloadedFiles, rustEnv });
   if (path.extname(entrypoint) === '.toml') {
@@ -218,6 +209,7 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     targetFolderDir = path.dirname(path.join(workPath, entrypoint));
   } else {
     const { PATH, HOME } = process.env;
+  console.log('wat', HOME);
     const rustEnv = {
       ...process.env,
       PATH: `${path.join(HOME, '.cargo/bin')}:${PATH}`,
