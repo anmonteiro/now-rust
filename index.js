@@ -92,22 +92,29 @@ async function buildSingleFile({
   await fs.writeFile(entrypointPath, launcherData);
 
   // Find a Cargo.toml file or TODO: create one
-  const possibleCargoTomlFiles = await glob(
-    '**/Cargo.toml',
-    path.join(workPath),
-  );
-  let cargoTomlFile = Object.keys(possibleCargoTomlFiles).find(
-    p => p === path.join(entrypointDirname, 'Cargo.toml'),
-  );
+  let cargoTomlFile;
+  try {
+    const projectDescriptionStr = await execa('cargo', ['locate-project'], {
+      env: rustEnv,
+      cwd: entrypointDirname,
+      stdio: 'inherit',
+    });
+    const projectDescription = JSON.parse(projectDescriptionStr);
+    if (projectDescription != null && projectDescription.root != null) {
+      cargoTomlFile = projectDescription.root;
+    }
+  } catch (e) {
+    if (!/could not find/g.test(e.stderr)) {
+      console.error("Couldn't run `cargo locate-project`");
+      throw e;
+    }
+  }
 
-  cargoTomlFile =
-    cargoTomlFile != null
-      ? cargoTomlFile
-      : Object.values(possibleCargoTomlFiles)[0];
-
+  // TODO: we're assuming there's a Cargo.toml file. We need to create one
+  // otherwise
   let cargoToml;
   try {
-    cargoToml = await parseTOMLStream(cargoTomlFile.toStream());
+    cargoToml = await parseTOMLStream(fs.createReadStream(cargoTomlFile));
   } catch (err) {
     console.error('Failed to parse TOML from entrypoint:', entrypoint);
     throw err;
@@ -132,7 +139,10 @@ async function buildSingleFile({
   });
   console.log('toml to write:', tomlToWrite);
 
-  await fs.writeFile(cargoTomlFile.fsPath, tomlToWrite);
+  // Overwrite the Cargo.toml file with one that includes the `now_lambda`
+  // dependency and our binary. `dependencies` is a map so we don't run the
+  // risk of having 2 `now_lambda`s in there.
+  await fs.writeFile(cargoTomlFile, tomlToWrite);
 
   console.log('running `cargo build --release`...');
   try {
@@ -146,18 +156,14 @@ async function buildSingleFile({
     throw err;
   }
 
-  const bin = path.join(entrypointDirname, 'target', 'debug', binName);
+  const bin = path.join(path.dirname(cargoTomlFile), 'target', 'debug', binName);
   console.log('bin', bin);
   try {
-    await execa(
-      'ls',
-      ['-lah', path.join('target', 'debug')],
-      {
-        env: rustEnv,
-        cwd: entrypointDirname,
-        stdio: 'inherit',
-      },
-    );
+    await execa('ls', ['-lah', path.join('target', 'debug')], {
+      env: rustEnv,
+      cwd: entrypointDirname,
+      stdio: 'inherit',
+    });
   } catch (err) {
     console.error('failed to `cls`');
   }
