@@ -51,7 +51,7 @@ async function buildWholeProject({
   const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
   console.log('running `cargo build --release`...');
   try {
-    await execa('cargo', ['build', '--release'], {
+    await execa('cargo', ['build'], {
       env: rustEnv,
       cwd: entrypointDirname,
       stdio: 'inherit',
@@ -61,7 +61,7 @@ async function buildWholeProject({
     throw err;
   }
 
-  const targetPath = path.join(entrypointDirname, 'target', 'release');
+  const targetPath = path.join(entrypointDirname, 'target', 'debug');
   const binaries = await inferCargoBinaries({
     env: rustEnv,
     cwd: entrypointDirname,
