@@ -209,10 +209,10 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     targetFolderDir = path.dirname(path.join(workPath, entrypoint));
   } else {
     const { PATH, HOME } = process.env;
-  console.log('wat', HOME);
+    console.log('wat', HOME);
     const rustEnv = {
       ...process.env,
-      PATH: `${path.join(HOME, '.cargo/bin')}:${PATH}`,
+      PATH: `${path.join(HOME, '.cargo/bin')}:/tmp/bin:/tmp/sbin:${PATH}`,
     };
 
     try {
