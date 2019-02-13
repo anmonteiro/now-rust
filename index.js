@@ -94,11 +94,14 @@ async function buildSingleFile({
   // Find a Cargo.toml file or TODO: create one
   let cargoTomlFile;
   try {
-    const projectDescriptionStr = await execa('cargo', ['locate-project'], {
-      env: rustEnv,
-      cwd: entrypointDirname,
-      stdio: 'inherit',
-    });
+    const { stdout: projectDescriptionStr } = await execa(
+      'cargo',
+      ['locate-project'],
+      {
+        env: rustEnv,
+        cwd: entrypointDirname,
+      },
+    );
     const projectDescription = JSON.parse(projectDescriptionStr);
     if (projectDescription != null && projectDescription.root != null) {
       cargoTomlFile = projectDescription.root;
@@ -156,7 +159,12 @@ async function buildSingleFile({
     throw err;
   }
 
-  const bin = path.join(path.dirname(cargoTomlFile), 'target', 'debug', binName);
+  const bin = path.join(
+    path.dirname(cargoTomlFile),
+    'target',
+    'debug',
+    binName,
+  );
   console.log('bin', bin);
   try {
     await execa('ls', ['-lah', path.join('target', 'debug')], {
