@@ -8,11 +8,28 @@ const download = require('@now/build-utils/fs/download.js'); // eslint-disable-l
 const glob = require('@now/build-utils/fs/glob.js'); // eslint-disable-line import/no-extraneous-dependencies
 const FileFsRef = require('@now/build-utils/file-fs-ref.js'); // eslint-disable-line import/no-extraneous-dependencies
 const installRustAndGCC = require('./download-install-rust-toolchain.js');
-const inferCargoBinaries = require('./inferCargoBinaries.js');
 
 exports.config = {
   maxLambdaSize: '25mb',
 };
+
+async function inferCargoBinaries() {
+  try {
+    const { stdout: manifestStr } = await execa('cargo', ['read-manifest'], {
+      env: rustEnv,
+      cwd: entrypointDirname,
+    });
+
+    const { targets } = JSON.parse(manifestStr);
+
+    return targets
+      .filter(({ kind }) => kind.includes('bin'))
+      .map(({ name }) => name);
+  } catch (err) {
+    console.error('failed to run `cargo read-manifest`');
+    throw err;
+  }
+}
 
 async function parseTOMLStream(stream) {
   return toml.parse.stream(stream);
@@ -45,10 +62,10 @@ async function buildWholeProject({
   }
 
   const targetPath = path.join(entrypointDirname, 'target', 'release');
-  const binaries = await inferCargoBinaries(
-    cargoToml,
-    path.join(entrypointDirname, 'src'),
-  );
+  const binaries = await inferCargoBinaries({
+    env: rustEnv,
+    cwd: entrypointDirname,
+  });
 
   const lambdas = {};
   const lambdaPath = path.dirname(entrypoint);
@@ -209,21 +226,10 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     const { PATH, HOME } = process.env;
     const rustEnv = {
       ...process.env,
-      PATH: `${path.join(HOME, '.cargo/bin')}:/tmp/bin:/tmp/sbin:${PATH}`,
+      PATH: `${path.join(HOME, '.cargo/bin')}:${PATH}`,
     };
 
-    console.log('crlh', rustEnv.PATH);
     const entrypointDirname = path.dirname(path.join(workPath, entrypoint));
-    try {
-      await execa('ls', ['-lah', path.join(HOME, '.cargo/bin')], {
-        env: rustEnv,
-        cwd: entrypointDirname,
-        stdio: 'inherit',
-      });
-    } catch (err) {
-      console.error('failed to `which cargo`');
-    }
-
     try {
       const { stdout: projectDescriptionStr } = await execa(
         'cargo',
