@@ -229,7 +229,7 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
         ['locate-project'],
         {
           env: rustEnv,
-          cwd: entrypointDirname,
+          cwd: path.dirname(entrypoint),
         },
       );
       const projectDescription = JSON.parse(projectDescriptionStr);
