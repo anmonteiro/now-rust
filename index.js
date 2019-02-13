@@ -192,7 +192,7 @@ exports.build = async m => {
   };
 
   try {
-    await execa('which', ['cargo'], {
+    await execa('ls', ['-lah', path.join(HOME, '.cargo/bin')], {
       env: rustEnv,
       cwd: entrypointDirname,
       stdio: 'inherit',
@@ -223,7 +223,7 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     };
 
     try {
-      await execa('which', ['cargo'], {
+      await execa('ls', ['-lah', path.join(HOME, '.cargo/bin')], {
         env: rustEnv,
         cwd: entrypointDirname,
         stdio: 'inherit',
