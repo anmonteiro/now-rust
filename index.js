@@ -212,15 +212,48 @@ exports.build = async m => {
 
 exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
   console.log('preparing cache...');
-  const entrypointDirname = path.dirname(path.join(workPath, entrypoint));
-  const cacheEntrypointDirname = path.dirname(path.join(cachePath, entrypoint));
+
+  let targetFolderDir;
+  if (path.extname(entrypoint) === '.toml') {
+    targetFolderDir = path.dirname(path.join(workPath, entrypoint));
+  } else {
+    try {
+      const { stdout: projectDescriptionStr } = await execa(
+        'cargo',
+        ['locate-project'],
+        {
+          env: rustEnv,
+          cwd: entrypointDirname,
+        },
+      );
+      const projectDescription = JSON.parse(projectDescriptionStr);
+      if (projectDescription != null && projectDescription.root != null) {
+        targetFolderDir = path.dirname(projectDescription.root);
+      }
+    } catch (e) {
+      if (!/could not find/g.test(e.stderr)) {
+        console.error("Couldn't run `cargo locate-project`");
+        throw e;
+      }
+    }
+    if (targetFolderDir == null) {
+      // `Cargo.toml` doesn't exist, in `build` we put it in the same
+      // path as the entrypoint.
+      targetFolderDir = path.dirname(path.join(workPath, entrypoint));
+    }
+  }
+
+  const cacheEntrypointDirname = path.join(
+    cachePath,
+    path.relative(workPath, targetFolderDir),
+  );
 
   // Remove the target folder to avoid 'directory already exists' errors
   fs.removeSync(path.join(cacheEntrypointDirname, 'target'));
   fs.mkdirpSync(cacheEntrypointDirname);
   // Move the target folder to the cache location
   fs.renameSync(
-    path.join(entrypointDirname, 'target'),
+    path.join(targetFolderDir, 'target'),
     path.join(cacheEntrypointDirname, 'target'),
   );
 
