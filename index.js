@@ -55,7 +55,11 @@ async function buildWholeProject({
     throw err;
   }
 
-  const targetPath = path.join(entrypointDirname, 'target', 'debug');
+  const targetPath = path.join(
+    entrypointDirname,
+    'target',
+    debug ? 'debug' : 'release',
+  );
   const binaries = await inferCargoBinaries({
     env: rustEnv,
     cwd: entrypointDirname,
@@ -64,7 +68,7 @@ async function buildWholeProject({
   const lambdas = {};
   const lambdaPath = path.dirname(entrypoint);
   await Promise.all(
-    binaries.map(async (binary) => {
+    binaries.map(async binary => {
       const fsPath = path.join(targetPath, binary);
       const lambda = await createLambda({
         files: {
@@ -183,7 +187,7 @@ async function buildSingleFile({
   const bin = path.join(
     path.dirname(cargoTomlFile),
     'target',
-    'debug',
+    debug ? 'debug' : 'release',
     binName,
   );
 
@@ -200,7 +204,7 @@ async function buildSingleFile({
   };
 }
 
-exports.build = async (m) => {
+exports.build = async m => {
   const { files, entrypoint, workPath } = m;
   console.log('downloading files');
   const downloadedFiles = await download(files, workPath);
