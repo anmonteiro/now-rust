@@ -82,7 +82,6 @@ async function buildSingleFile({
 
   const entrypointPath = downloadedFiles[entrypoint].fsPath;
   const entrypointDirname = path.dirname(entrypointPath);
-  console.log('launcher datqa', launcherData);
   launcherData = launcherData.replace(
     '// PLACEHOLDER',
     await fs.readFile(path.join(workPath, entrypoint)),
@@ -191,7 +190,16 @@ exports.build = async m => {
     ...otherEnv,
     PATH: `${path.join(HOME, '.cargo/bin')}:${toolchainPath}:${PATH}`,
   };
-  console.log('wat', HOME);
+
+  try {
+    await execa('which', ['cargo'], {
+      env: rustEnv,
+      cwd: entrypointDirname,
+      stdio: 'inherit',
+    });
+  } catch (err) {
+    console.error('failed to `which cargo`');
+  }
 
   const newM = Object.assign(m, { downloadedFiles, rustEnv });
   if (path.extname(entrypoint) === '.toml') {
@@ -209,11 +217,20 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
     targetFolderDir = path.dirname(path.join(workPath, entrypoint));
   } else {
     const { PATH, HOME } = process.env;
-    console.log('wat', HOME);
     const rustEnv = {
       ...process.env,
       PATH: `${path.join(HOME, '.cargo/bin')}:/tmp/bin:/tmp/sbin:${PATH}`,
     };
+
+    try {
+      await execa('which', ['cargo'], {
+        env: rustEnv,
+        cwd: entrypointDirname,
+        stdio: 'inherit',
+      });
+    } catch (err) {
+      console.error('failed to `which cargo`');
+    }
 
     try {
       const { stdout: projectDescriptionStr } = await execa(
