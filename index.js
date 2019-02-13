@@ -1,6 +1,5 @@
 const fs = require('fs-extra');
 const path = require('path');
-const concat = require('concat-stream');
 const execa = require('execa');
 const toml = require('@iarna/toml');
 const { createLambda } = require('@now/build-utils/lambda.js'); // eslint-disable-line import/no-extraneous-dependencies
@@ -37,28 +36,22 @@ async function parseTOMLStream(stream) {
 }
 
 async function buildWholeProject({
-  files,
   entrypoint,
   downloadedFiles,
   rustEnv,
+  config,
 }) {
-  let cargoToml;
-  try {
-    cargoToml = await parseTOMLStream(files[entrypoint].toStream());
-  } catch (err) {
-    console.error('Failed to parse TOML from entrypoint:', entrypoint);
-    throw err;
-  }
   const entrypointDirname = path.dirname(downloadedFiles[entrypoint].fsPath);
-  console.log('running `cargo build --release`...');
+  const { debug } = config;
+  console.log('running `cargo build`...');
   try {
-    await execa('cargo', ['build'], {
+    await execa('cargo', ['build'].concat(debug ? [] : ['--release']), {
       env: rustEnv,
       cwd: entrypointDirname,
       stdio: 'inherit',
     });
   } catch (err) {
-    console.error('failed to `cargo build --release`');
+    console.error('failed to `cargo build`');
     throw err;
   }
 
@@ -71,7 +64,7 @@ async function buildWholeProject({
   const lambdas = {};
   const lambdaPath = path.dirname(entrypoint);
   await Promise.all(
-    binaries.map(async binary => {
+    binaries.map(async (binary) => {
       const fsPath = path.join(targetPath, binary);
       const lambda = await createLambda({
         files: {
@@ -88,11 +81,33 @@ async function buildWholeProject({
   return lambdas;
 }
 
+async function cargoLocateProject(config) {
+  try {
+    const { stdout: projectDescriptionStr } = await execa(
+      'cargo',
+      ['locate-project'],
+      config,
+    );
+    const projectDescription = JSON.parse(projectDescriptionStr);
+    if (projectDescription != null && projectDescription.root != null) {
+      return projectDescription.root;
+    }
+  } catch (e) {
+    if (!/could not find/g.test(e.stderr)) {
+      console.error("Couldn't run `cargo locate-project`");
+      throw e;
+    }
+  }
+
+  return null;
+}
+
 async function buildSingleFile({
   workPath,
   entrypoint,
   downloadedFiles,
   rustEnv,
+  config,
 }) {
   console.log('building single file');
   const launcherPath = path.join(__dirname, 'launcher.rs');
@@ -109,26 +124,10 @@ async function buildSingleFile({
   await fs.writeFile(entrypointPath, launcherData);
 
   // Find a Cargo.toml file or TODO: create one
-  let cargoTomlFile;
-  try {
-    const { stdout: projectDescriptionStr } = await execa(
-      'cargo',
-      ['locate-project'],
-      {
-        env: rustEnv,
-        cwd: entrypointDirname,
-      },
-    );
-    const projectDescription = JSON.parse(projectDescriptionStr);
-    if (projectDescription != null && projectDescription.root != null) {
-      cargoTomlFile = projectDescription.root;
-    }
-  } catch (e) {
-    if (!/could not find/g.test(e.stderr)) {
-      console.error("Couldn't run `cargo locate-project`");
-      throw e;
-    }
-  }
+  const cargoTomlFile = await cargoLocateProject({
+    env: rustEnv,
+    cwd: entrypointDirname,
+  });
 
   // TODO: we're assuming there's a Cargo.toml file. We need to create one
   // otherwise
@@ -143,12 +142,12 @@ async function buildSingleFile({
   const binName = path
     .basename(entrypointPath)
     .replace(path.extname(entrypointPath), '');
-  const { package, dependencies } = cargoToml;
+  const { package: pkg, dependencies } = cargoToml;
   dependencies.now_lambda = {
     git: 'https://github.com/zeit/now-builders',
   };
   const tomlToWrite = toml.stringify({
-    package,
+    package: pkg,
     dependencies,
     bin: [
       {
@@ -164,15 +163,20 @@ async function buildSingleFile({
   // risk of having 2 `now_lambda`s in there.
   await fs.writeFile(cargoTomlFile, tomlToWrite);
 
-  console.log('running `cargo build --release`...');
+  const { debug } = config;
+  console.log('running `cargo build`...');
   try {
-    await execa('cargo', ['build', '--bin', binName], {
-      env: rustEnv,
-      cwd: entrypointDirname,
-      stdio: 'inherit',
-    });
+    await execa(
+      'cargo',
+      ['build', '--bin', binName].concat(debug ? [] : ['--release']),
+      {
+        env: rustEnv,
+        cwd: entrypointDirname,
+        stdio: 'inherit',
+      },
+    );
   } catch (err) {
-    console.error('failed to `cargo build --release`');
+    console.error('failed to `cargo build`');
     throw err;
   }
 
@@ -196,7 +200,7 @@ async function buildSingleFile({
   };
 }
 
-exports.build = async m => {
+exports.build = async (m) => {
   const { files, entrypoint, workPath } = m;
   console.log('downloading files');
   const downloadedFiles = await download(files, workPath);
@@ -211,10 +215,9 @@ exports.build = async m => {
 
   const newM = Object.assign(m, { downloadedFiles, rustEnv });
   if (path.extname(entrypoint) === '.toml') {
-    return await buildWholeProject(newM);
-  } else {
-    return await buildSingleFile(newM);
+    return buildWholeProject(newM);
   }
+  return buildSingleFile(newM);
 };
 
 exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
@@ -229,28 +232,15 @@ exports.prepareCache = async ({ cachePath, entrypoint, workPath }) => {
       ...process.env,
       PATH: `${path.join(HOME, '.cargo/bin')}:${PATH}`,
     };
-
     const entrypointDirname = path.dirname(path.join(workPath, entrypoint));
-    try {
-      const { stdout: projectDescriptionStr } = await execa(
-        'cargo',
-        ['locate-project'],
-        {
-          env: rustEnv,
-          cwd: entrypointDirname,
-        },
-      );
-      const projectDescription = JSON.parse(projectDescriptionStr);
-      if (projectDescription != null && projectDescription.root != null) {
-        targetFolderDir = path.dirname(projectDescription.root);
-      }
-    } catch (e) {
-      if (!/could not find/g.test(e.stderr)) {
-        console.error("Couldn't run `cargo locate-project`");
-        throw e;
-      }
-    }
-    if (targetFolderDir == null) {
+    const cargoTomlFile = await cargoLocateProject({
+      env: rustEnv,
+      cwd: entrypointDirname,
+    });
+
+    if (cargoTomlFile != null) {
+      targetFolderDir = path.dirname(cargoTomlFile);
+    } else {
       // `Cargo.toml` doesn't exist, in `build` we put it in the same
       // path as the entrypoint.
       targetFolderDir = path.dirname(path.join(workPath, entrypoint));
